@@ -12,6 +12,10 @@ or
 
 $ make clean; make DEBUG=1
 
+or
+
+$ make clean; make DEBUG=1 CHECK_WHEN_READ=1
+
 -------
 
 Usage:

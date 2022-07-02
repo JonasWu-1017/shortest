@@ -105,18 +105,19 @@ int main(int argc, char *argv[])
             item.i_subsequence_length = 0;
             item.i_src_num = (unsigned)stoi(line, nullptr, 10);
             gSourceVector.push_back(item);
-            
+#ifdef CHECK_WHEN_READ
             if (sum >= 0)
             {
                 sum += item.i_src_num;
                 if (sum >= gPeak)
                 {
-                    gSourceVector[0].i_subsequence_length = length;
+                    gMinSubsequenceLen = gSourceVector[0].i_subsequence_length = gSourceVector.size();
                     sum = -1;
                 }
             }
+#endif
         }
-        myfile.close();        
+        myfile.close();
     }
     else
     {
@@ -125,17 +126,25 @@ int main(int argc, char *argv[])
     }
 
     length = gSourceVector.size();
-    if (sum >= 0)
+#ifdef CHECK_WHEN_READ    
+    if (sum != -1)
     {
         if (0 < length)
             gSourceVector[0].i_subsequence_length = -1;
     }
     else
     {
+        gStop = length;
+#else
+    {
         gStop = gMinSubsequenceLen = length;
+#endif
         for (i = 0; i < thread_total; i++)
+#ifdef CHECK_WHEN_READ
             threads[i] = std::thread(thCheckSubsequence, length, thread_total, i + 1);
-        // threads[i] = std::thread(thCheckSubsequence, length, thread_total, i);
+#else            
+            threads[i] = std::thread(thCheckSubsequence, length, thread_total, i);
+#endif            
         for (i = 0; i < thread_total; i++)
             threads[i].join();
     }

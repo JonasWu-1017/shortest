@@ -15,6 +15,9 @@ OBJS = main.o
 ifdef DEBUG
 CFLAGS += -DDEBUG
 endif
+ifdef CHECK_WHEN_READ
+CFLAGS += -DCHECK_WHEN_READ
+endif
 
 all: main.o
 	$(CXX) -o $(TARGET) $(OBJS) -Wl,-rpath=$(LIBS)/ -L$(LIBS)/ $(LDFLAGS)
