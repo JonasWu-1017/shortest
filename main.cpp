@@ -31,9 +31,8 @@ int tryWrite(int n)
     return n;
 }
 
-void thCheckSubsequence(int threadTotal, int n)
+void thCheckSubsequence(int size, int threadTotal, int n)
 {
-    int size = gSourceVector.size();
     int i = 0, sum = 0, len = 0;
     [[maybe_unused]] int id = n;
     while (n < gStop)
@@ -48,7 +47,9 @@ void thCheckSubsequence(int threadTotal, int n)
                 len = i - n + 1;
                 if (len > gMinSubsequenceLen)
                 {
+#ifdef DEBUG                    
                     gSourceVector[n].i_subsequence_length = -2;
+#endif                    
                     break;
                 }
                 sum += gSourceVector[i].i_src_num;
@@ -64,7 +65,9 @@ void thCheckSubsequence(int threadTotal, int n)
             {
                 if (gStop > n)
                     gStop = n;
+#ifdef DEBUG                    
                 gSourceVector[n].i_subsequence_length = -1;
+#endif                
                 break;
             }
         }
@@ -88,7 +91,8 @@ int main(int argc, char *argv[])
     thread threads[thread_total];
     StShortestItem item;
     string line;
-    int i = 0, j = 0;
+    int i = 0, j = 0, length = 0;
+    [[maybe_unused]] int sum = 0;
 
     ifstream myfile(argv[2], ios::out | ios::binary);
     if (myfile.is_open())
@@ -101,8 +105,18 @@ int main(int argc, char *argv[])
             item.i_subsequence_length = 0;
             item.i_src_num = (unsigned)stoi(line, nullptr, 10);
             gSourceVector.push_back(item);
+            
+            if (sum >= 0)
+            {
+                sum += item.i_src_num;
+                if (sum >= gPeak)
+                {
+                    gSourceVector[0].i_subsequence_length = length;
+                    sum = -1;
+                }
+            }
         }
-        myfile.close();
+        myfile.close();        
     }
     else
     {
@@ -110,11 +124,21 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    gStop = gMinSubsequenceLen = gSourceVector.size();
-    for (i = 0; i < thread_total; i++)
-        threads[i] = std::thread(thCheckSubsequence, thread_total, i);
-    for (i = 0; i < thread_total; i++)
-        threads[i].join();
+    length = gSourceVector.size();
+    if (sum >= 0)
+    {
+        if (0 < length)
+            gSourceVector[0].i_subsequence_length = -1;
+    }
+    else
+    {
+        gStop = gMinSubsequenceLen = length;
+        for (i = 0; i < thread_total; i++)
+            threads[i] = std::thread(thCheckSubsequence, length, thread_total, i + 1);
+        // threads[i] = std::thread(thCheckSubsequence, length, thread_total, i);
+        for (i = 0; i < thread_total; i++)
+            threads[i].join();
+    }
 
     auto elapsed = chrono::high_resolution_clock::now() - start;
     long long microseconds = chrono::duration_cast<chrono::microseconds>(elapsed).count();
@@ -124,14 +148,12 @@ int main(int argc, char *argv[])
     cout << "processor_count: " << processor_count << "\n";
     cout << "thread_total: " << thread_total << "\n";
     cout << "gMinSubsequenceLen: " << gMinSubsequenceLen << "\n";
-    for (i = 0; i < (int)gSourceVector.size(); i++)
+    for (i = 0; i < length; i++)
         cout << gSourceVector[i].thread_id << "\t" << gSourceVector[i].i_src_num << "\t" << gSourceVector[i].i_subsequence_length << "\n";
 #endif
 
-    for (i = 0; i < (int)gSourceVector.size(); i++)
+    for (i = 0; 0 < gMinSubsequenceLen && i < length; i++)
     {
-        if (gSourceVector[i].i_subsequence_length == -1)
-            break;
         if (gSourceVector[i].i_subsequence_length == gMinSubsequenceLen)
         {
             for (j = 0; j < gSourceVector[i].i_subsequence_length; j++)
