@@ -22,6 +22,10 @@ int gStop = 0;
 mutex gLock;
 vector<StShortestItem> gSourceVector;
 
+/**************************************
+* params int n: try set gMinSubsequenceLen to n
+* return int: gMinSubsequenceLen value
+**************************************/
 int tryWrite(int n)
 {
     unique_lock<mutex> lock(gLock);
@@ -31,10 +35,17 @@ int tryWrite(int n)
     return n;
 }
 
+/**************************************
+* params int size: source int array size
+* params int threadTotal: total number of thCheckSubsequence
+* params int n: check subsequence from n index
+**************************************/
 void thCheckSubsequence(int size, int threadTotal, int n)
 {
     int i = 0, sum = 0, len = 0;
     [[maybe_unused]] int id = n;
+
+    // gStop mean the length of source array or the index number that definitely can't gather good subsequnce from
     while (n < gStop)
     {
         // if (0 == gSourceVector[n].i_subsequence_length)
@@ -42,6 +53,7 @@ void thCheckSubsequence(int size, int threadTotal, int n)
 #ifdef DEBUG
             gSourceVector[n].thread_id = id;
 #endif
+            // try gather a subsequence
             for (i = n, sum = 0; i < size; i++)
             {
                 len = i - n + 1;
@@ -61,6 +73,8 @@ void thCheckSubsequence(int size, int threadTotal, int n)
                     break;
                 }
             }
+
+            // if size <= i, after n you definitely can not gather a good subsequence
             if (size <= i)
             {
                 if (gStop > n)
@@ -71,6 +85,7 @@ void thCheckSubsequence(int size, int threadTotal, int n)
                 break;
             }
         }
+        
         n += threadTotal;
     }
 }
@@ -94,6 +109,9 @@ int main(int argc, char *argv[])
     int i = 0, j = 0, length = 0;
     [[maybe_unused]] int sum = 0;
 
+    /**************************************
+    * read source from argv[2]
+    **************************************/
     ifstream myfile(argv[2], ios::out | ios::binary);
     if (myfile.is_open())
     {
@@ -106,6 +124,7 @@ int main(int argc, char *argv[])
             item.i_src_num = (unsigned)stoi(line, nullptr, 10);
             gSourceVector.push_back(item);
 #ifdef CHECK_WHEN_READ
+// try read file and check 1st subsequence
             if (sum >= 0)
             {
                 sum += item.i_src_num;
@@ -125,8 +144,12 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    /**************************************
+    * check subsequence
+    **************************************/
     length = gSourceVector.size();
-#ifdef CHECK_WHEN_READ    
+#ifdef CHECK_WHEN_READ
+// check 1st subsequence if good
     if (sum != -1)
     {
         if (0 < length)
@@ -153,6 +176,9 @@ int main(int argc, char *argv[])
     long long microseconds = chrono::duration_cast<chrono::microseconds>(elapsed).count();
     long long nanoseconds = chrono::duration_cast<chrono::nanoseconds>(elapsed).count();
 
+    /**************************************
+    * ouput result
+    **************************************/
 #ifdef DEBUG
     cout << "processor_count: " << processor_count << "\n";
     cout << "thread_total: " << thread_total << "\n";
