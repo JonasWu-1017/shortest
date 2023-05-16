@@ -85,15 +85,7 @@ int main() {
     fin.close();
     */
     int k=80;
-    vector<int> arr;
-    arr.push_back(3);
-    arr.push_back(17);
-    arr.push_back(42);
-    arr.push_back(1);
-    arr.push_back(26);
-    arr.push_back(8);
-    arr.push_back(0);
-    arr.push_back(63);
+    vector<int> arr = {3, 17, 42, 1, 26, 8, 0, 63};
 
     // Start a timer
     auto start = chrono::steady_clock::now(); // use steady_clock instead of high_resolution_clock
